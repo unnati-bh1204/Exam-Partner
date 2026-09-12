@@ -1,0 +1,49 @@
+{% if documents %}
+<div class="docs">
+  {% for doc in documents %}
+    {% set name = doc.filename | lower %}
+    {% if name.endswith('.pdf') %}
+      {% set icon, icon_class = '📄', 'i-pdf' %}
+    {% elif name.endswith('.docx') or name.endswith('.doc') %}
+      {% set icon, icon_class = '📝', 'i-doc' %}
+    {% elif name.endswith('.pptx') or name.endswith('.ppt') %}
+      {% set icon, icon_class = '📊', 'i-ppt' %}
+    {% elif name.endswith('.png') or name.endswith('.jpg') or name.endswith('.jpeg') or name.endswith('.webp') or name.endswith('.heic') %}
+      {% set icon, icon_class = '✍️', 'i-img' %}
+    {% else %}
+      {% set icon, icon_class = '📁', 'i-other' %}
+    {% endif %}
+
+    <article class="doc rise">
+      <div class="doc-ic {{ icon_class }}" aria-hidden="true">{{ icon }}</div>
+      <div class="doc-b">
+        <div class="doc-n" title="{{ doc.filename }}">{{ doc.filename }}</div>
+        {% if doc.status == 'processing' %}
+          <div class="doc-m">Reading your material…</div>
+          <div class="bar"><i></i></div>
+        {% elif doc.status == 'failed' %}
+          <div class="doc-m err">{{ doc.error or "Couldn't read this file — try re-uploading" }}</div>
+        {% else %}
+          <div class="doc-m">
+            Added {{ doc.created_at.strftime('%d %b') if doc.created_at else 'recently' }} · searchable
+          </div>
+        {% endif %}
+      </div>
+
+      {% if doc.status == 'processing' %}
+        <span class="chip c-wait"><span class="spin" aria-hidden="true">⟳</span> Processing</span>
+      {% elif doc.status == 'failed' %}
+        <span class="chip c-bad">⚠ Failed</span>
+      {% else %}
+        <span class="chip c-ok"><span class="d" aria-hidden="true"></span> Ready</span>
+      {% endif %}
+    </article>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty empty-sm">
+  <div class="art" aria-hidden="true">📥</div>
+  <h3>Nothing here yet</h3>
+  <p>Drop your notes, textbooks or slides above and we'll make them searchable.</p>
+</div>
+{% endif %}

@@ -1,0 +1,48 @@
+{# Rendered both inline (chat history) and standalone (htmx response). #}
+{% set is_general = msg.response_mode == 'general' %}
+{% set not_found = msg.response_mode == 'rag' and not msg.citations %}
+
+<div class="u-msg rise">{{ msg.question }}</div>
+
+<div class="a-msg rise">
+  <div class="a-orb {{ 'gen' if is_general }}" aria-hidden="true">{{ '✨' if is_general else '✦' }}</div>
+  <div class="a-body">
+
+    {% if not_found %}
+      <div class="miss">
+        <p class="t">I couldn't find this in your uploaded material 🔍</p>
+        <p class="s">I checked this subject's documents — this topic isn't in your notes.</p>
+        <form hx-post="/subjects/{{ msg.subject_id }}/chat/general"
+              hx-target="#chat-history"
+              hx-swap="beforeend"
+              hx-indicator="#thinking">
+          <input type="hidden" name="question" value="{{ msg.question }}">
+          <button class="btn btn-g btn-s" type="submit">✨ Get a general AI answer instead</button>
+        </form>
+      </div>
+
+    {% else %}
+      {% if is_general %}
+        <p class="a-tag t-gen">✨ General AI answer · not from your material</p>
+      {% else %}
+        <p class="a-tag t-rag">✓ Based on your material</p>
+      {% endif %}
+
+      <div class="a-txt">{{ msg.answer }}</div>
+
+      {% if msg.citations %}
+        <div class="srcs">
+          <p class="hd">Sources</p>
+          <div class="src-list">
+            {% for c in msg.citations %}
+              <span class="src">📄 {{ c.filename }} <span class="pg">{{ c.source_label }}</span></span>
+            {% endfor %}
+          </div>
+        </div>
+      {% elif is_general %}
+        <p class="gen-note">This came from the model's general knowledge, so it isn't backed by your notes.</p>
+      {% endif %}
+    {% endif %}
+
+  </div>
+</div>

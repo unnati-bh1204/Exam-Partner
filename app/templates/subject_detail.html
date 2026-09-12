@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}{{ subject.name }} · Exam Partner{% endblock %}
+{% set ready_count = documents | selectattr('status', 'equalto', 'ready') | list | length %}
+
+{% block content %}
+<nav class="crumb"><a href="/subjects">← All subjects</a></nav>
+
+<div class="sub-hd">
+  <div class="ttl">
+    <div class="sub-ic" aria-hidden="true">🧠</div>
+    <div>
+      <h1>{{ subject.name }}</h1>
+      <p class="sub">
+        {{ documents|length }} document{{ '' if documents|length == 1 else 's' }}
+        {% if documents %}· {{ ready_count }} ready to search{% endif %}
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="tabs" role="tablist" aria-label="Subject sections">
+  <button class="tab" id="tab-chat" type="button" role="tab" aria-controls="panel-chat"
+          aria-selected="{{ 'true' if ready_count else 'false' }}" onclick="showTab('chat')">💬 Chat</button>
+  <button class="tab" id="tab-docs" type="button" role="tab" aria-controls="panel-docs"
+          aria-selected="{{ 'false' if ready_count else 'true' }}" onclick="showTab('docs')">📁 Documents</button>
+</div>
+
+<!-- ============================ DOCUMENTS ============================ -->
+<section class="panel" id="panel-docs" role="tabpanel" aria-labelledby="tab-docs" {% if ready_count %}hidden{% endif %}>
+  <form id="upload-form"
+        hx-post="/subjects/{{ subject._id }}/documents"
+        hx-encoding="multipart/form-data"
+        hx-trigger="change from:#file-input"
+        hx-swap="none"
+        hx-on::after-request="this.reset(); htmx.trigger('#doc-list', 'uploaded');">
+    <label class="drop" id="dropzone" for="file-input">
+      <span class="ic" aria-hidden="true">⬆</span>
+      <span class="t">Drop your notes here</span>
+      <span class="s">or click to browse your files</span>
+      <span class="fmts">
+        <span class="fmt">PDF</span><span class="fmt">DOCX</span>
+        <span class="fmt">PPTX</span><span class="fmt">Images</span>
+      </span>
+    </label>
+    <input id="file-input" name="file" type="file" class="sr-only"
+           accept=".pdf,.docx,.pptx,image/*">
+  </form>
+
+  <div class="sec-h">
+    <h2>Documents</h2>
+    <span class="n">{{ documents|length }} file{{ '' if documents|length == 1 else 's' }}</span>
+  </div>
+
+  <div id="doc-list"
+       hx-get="/subjects/{{ subject._id }}/documents/list"
+       hx-trigger="load, uploaded, every 3s"
+       hx-swap="innerHTML"></div>
+</section>
+
+<!-- ============================== CHAT =============================== -->
+<section class="panel" id="panel-chat" role="tabpanel" aria-labelledby="tab-chat" {% if not ready_count %}hidden{% endif %}>
+  <div class="chat-hd">
+    <div class="who">
+      <div class="orb" aria-hidden="true">✦</div>
+      <div>
+        <h2>{{ subject.name }}</h2>
+        <div class="cnt">{{ documents|length }} document{{ '' if documents|length == 1 else 's' }} in this subject</div>
+      </div>
+    </div>
+    <span class="grounded">✦ Material-grounded AI</span>
+  </div>
+
+  <div class="thread" id="chat-history">
+    {% if history %}
+      {% for msg in history %}{% include "partials/_message.html" %}{% endfor %}
+    {% else %}
+      <div class="empty empty-sm" id="chat-empty" style="border:none;background:none;margin:auto">
+        <div class="art" aria-hidden="true">✦</div>
+        <h3>Ask anything about your material</h3>
+        <p>I'll only answer from what you've uploaded <span class="serif">— and I'll show you the page.</span></p>
+      </div>
+    {% endif %}
+  </div>
+
+  <form class="composer"
+        hx-post="/subjects/{{ subject._id }}/chat"
+        hx-target="#chat-history"
+        hx-swap="beforeend"
+        hx-indicator="#thinking"
+        hx-on::after-request="this.reset(); scrollThread();"
+        hx-on::before-request="hideChatEmpty();">
+    <label class="sr-only" for="question">Ask a question about {{ subject.name }}</label>
+    <input id="question" name="question" type="text" required autocomplete="off"
+           {% if not ready_count %}disabled{% endif %}
+           placeholder="{% if ready_count %}Ask anything from your {{ subject.name }} notes…{% else %}Add a document and wait for it to finish indexing…{% endif %}">
+    <button class="send" type="submit" aria-label="Send question" {% if not ready_count %}disabled{% endif %}>↑</button>
+  </form>
+  {% if not ready_count %}
+  <p class="composer-note">Nothing is searchable yet — upload material in the <strong>Documents</strong> tab first.</p>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<!-- Thinking indicator, moved into the thread by htmx while a question is in flight -->
+<div id="thinking" class="a-msg thinking htmx-indicator" aria-live="polite">
+  <div class="a-orb" aria-hidden="true">✦</div>
+  <div class="dots" aria-label="Searching your material"><i></i><i></i><i></i></div>
+</div>
+
+<script>
+  function showTab(which) {
+    var isChat = which === "chat";
+    document.getElementById("panel-chat").hidden = !isChat;
+    document.getElementById("panel-docs").hidden = isChat;
+    document.getElementById("tab-chat").setAttribute("aria-selected", String(isChat));
+    document.getElementById("tab-docs").setAttribute("aria-selected", String(!isChat));
+    history.replaceState(null, "", isChat ? "#chat" : "#documents");
+    if (isChat) scrollThread();
+  }
+  if (location.hash === "#documents") showTab("docs");
+  if (location.hash === "#chat") showTab("chat");
+
+  function scrollThread() {
+    var t = document.getElementById("chat-history");
+    if (t) t.scrollTop = t.scrollHeight;
+  }
+  function hideChatEmpty() {
+    var e = document.getElementById("chat-empty");
+    if (e) e.remove();
+  }
+  scrollThread();
+
+  // Move the thinking indicator to the end of the thread so it appears where
+  // the answer will land.
+  document.body.addEventListener("htmx:beforeRequest", function (evt) {
+    if (evt.target.classList.contains("composer")) {
+      document.getElementById("chat-history").appendChild(document.getElementById("thinking"));
+      scrollThread();
+    }
+  });
+
+  // Drag and drop needs JS: the drop event carries files that must be handed
+  // to the file input for the form to submit them.
+  (function () {
+    var zone = document.getElementById("dropzone");
+    var input = document.getElementById("file-input");
+    if (!zone || !input) return;
+    ["dragenter", "dragover"].forEach(function (t) {
+      zone.addEventListener(t, function (e) { e.preventDefault(); zone.classList.add("drag"); });
+    });
+    ["dragleave", "drop"].forEach(function (t) {
+      zone.addEventListener(t, function (e) { e.preventDefault(); zone.classList.remove("drag"); });
+    });
+    zone.addEventListener("drop", function (e) {
+      if (!e.dataTransfer.files.length) return;
+      input.files = e.dataTransfer.files;
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+  })();
+</script>
+{% endblock %}

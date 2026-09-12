@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Your subjects · Exam Partner{% endblock %}
+
+{% set palettes = [
+  {'a': 'linear-gradient(90deg,#6366f1,#8b5cf6)', 'ab': 'rgba(99,102,241,.10)', 'ic': '🧠'},
+  {'a': 'linear-gradient(90deg,#ec4899,#f43f5e)', 'ab': 'rgba(236,72,153,.10)', 'ic': '🔥'},
+  {'a': 'linear-gradient(90deg,#3b82f6,#06b6d4)', 'ab': 'rgba(59,130,246,.10)', 'ic': '🌳'},
+  {'a': 'linear-gradient(90deg,#14b8a6,#10b981)', 'ab': 'rgba(20,184,166,.12)', 'ic': '📡'},
+  {'a': 'linear-gradient(90deg,#f59e0b,#ec4899)', 'ab': 'rgba(245,158,11,.12)', 'ic': '⚗️'},
+  {'a': 'linear-gradient(90deg,#8b5cf6,#3b82f6)', 'ab': 'rgba(139,92,246,.10)', 'ic': '📐'}
+] %}
+
+{% block topbar_actions %}
+  {% if subjects %}
+  <button class="btn btn-g btn-s" type="button" onclick="openCreate()">＋ New subject</button>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="hello">
+  <div>
+    <h1><span id="greeting">Hello</span>{% if user and user.email %}, {{ user.email.split('@')[0] }}{% endif %} 👋</h1>
+    {% if subjects %}
+    <p class="sub">
+      You have <strong>{{ subjects|length }} subject{{ '' if subjects|length == 1 else 's' }}</strong>
+      and <strong>{{ total_documents }} document{{ '' if total_documents == 1 else 's' }}</strong> ready to search.
+    </p>
+    {% else %}
+    <p class="sub">Let's get your semester organised.</p>
+    {% endif %}
+  </div>
+  {% if subjects %}
+  <button class="btn btn-p" type="button" onclick="openCreate()">＋ New subject</button>
+  {% endif %}
+</div>
+
+<form class="create-box" id="create-box" method="post" action="/subjects" hidden>
+  <div class="fld">
+    <label for="subject-name">Subject name</label>
+    <input id="subject-name" name="name" type="text" required maxlength="120"
+           placeholder="e.g. Machine Learning, Thermodynamics, DSP">
+  </div>
+  <button class="btn btn-p" type="submit">Create subject</button>
+  <button class="btn btn-q" type="button" onclick="closeCreate()">Cancel</button>
+</form>
+
+{% if subjects %}
+  <div class="sec-h">
+    <h2>Your subjects</h2>
+    <span class="n">{{ subjects|length }} subject{{ '' if subjects|length == 1 else 's' }}</span>
+  </div>
+
+  <div class="grid">
+    {% for subject in subjects %}
+      {% set p = palettes[(subject.name|length) % palettes|length] %}
+      <article class="sub-card rise" style="--a:{{ p.a }};--ab:{{ p.ab }};animation-delay:{{ loop.index0 * 40 }}ms">
+        <div class="sub-ic" aria-hidden="true">{{ p.ic }}</div>
+        <div>
+          <h3><a href="/subjects/{{ subject._id }}">{{ subject.name }}</a></h3>
+          <div class="sub-meta">
+            <span>{{ subject.document_count }} document{{ '' if subject.document_count == 1 else 's' }}</span>
+            {% if subject.processing_count %}
+              <span class="dot"></span><span>{{ subject.processing_count }} processing</span>
+            {% elif subject.failed_count %}
+              <span class="dot"></span><span>{{ subject.failed_count }} failed</span>
+            {% elif subject.last_activity %}
+              <span class="dot"></span><span>Updated {{ subject.last_activity.strftime('%d %b') }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="sub-go">
+          <span>Open subject</span>
+          <span class="arr" aria-hidden="true">→</span>
+        </div>
+        <form class="sub-del" method="post" action="/subjects/{{ subject._id }}/delete"
+              style="position:absolute;top:14px;right:12px"
+              onsubmit="return confirm('Delete “{{ subject.name }}” and everything in it?')">
+          <button type="submit" aria-label="Delete {{ subject.name }}">✕</button>
+        </form>
+      </article>
+    {% endfor %}
+
+    <button class="new-card" type="button" onclick="openCreate()">
+      <span class="plus" aria-hidden="true">＋</span>
+      New subject
+    </button>
+  </div>
+{% else %}
+  <div class="empty">
+    <div class="art" aria-hidden="true">📚</div>
+    <h3>Your semester starts here</h3>
+    <p>Create a subject, drop in your notes and slides, and start asking questions
+      <span class="serif">— your notes become searchable in seconds.</span></p>
+    <button class="btn btn-p" type="button" onclick="openCreate()">＋ Create your first subject</button>
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function openCreate() {
+    var box = document.getElementById("create-box");
+    box.hidden = false;
+    box.querySelector("input").focus();
+  }
+  function closeCreate() {
+    document.getElementById("create-box").hidden = true;
+  }
+  // Time-of-day greeting comes from the browser, so it matches the student's
+  // own clock rather than the server's timezone.
+  (function () {
+    var h = new Date().getHours();
+    document.getElementById("greeting").textContent =
+      h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Ask your notes. Not the internet. Upload your study material and get answers with the exact page they came from.">
+  <meta name="theme-color" content="#faf9fd">
+  <title>{% block title %}Exam Partner{% endblock %}</title>
+  <link rel="preload" href="/static/fonts/plus-jakarta-sans.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+</head>
+<body>
+{% block shell %}
+  <header class="top">
+    <a class="logo" href="/subjects">
+      <span class="m" aria-hidden="true">◆</span>
+      <span>Exam Partner</span>
+    </a>
+    <div class="top-r">
+      {% block topbar_actions %}{% endblock %}
+      {% if request.session.get("user_id") %}
+      <div class="acct">
+        <button class="ava" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Account menu"
+                onclick="const m=this.nextElementSibling; const o=m.hidden; m.hidden=!o; this.setAttribute('aria-expanded', String(o));">
+          {{ (user.email[:2] | upper) if user and user.email else "KB" }}
+        </button>
+        <div class="acct-menu" hidden>
+          <div class="acct-who">
+            <div class="n">Signed in</div>
+            <div class="e">{{ user.email if user else "" }}</div>
+          </div>
+          <form action="/logout" method="post">
+            <button class="acct-item" type="submit">↩ Log out</button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </header>
+
+  <main class="wrap {% block wrap_class %}{% endblock %}">
+    {% block content %}{% endblock %}
+  </main>
+{% endblock %}
+
+<script>
+  // Close the account menu on outside click or Escape.
+  document.addEventListener("click", function (e) {
+    document.querySelectorAll(".acct").forEach(function (acct) {
+      if (!acct.contains(e.target)) {
+        var menu = acct.querySelector(".acct-menu");
+        var btn = acct.querySelector(".ava");
+        if (menu && !menu.hidden) { menu.hidden = true; btn.setAttribute("aria-expanded", "false"); }
+      }
+    });
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    document.querySelectorAll(".acct-menu").forEach(function (menu) {
+      if (!menu.hidden) {
+        menu.hidden = true;
+        menu.parentElement.querySelector(".ava").setAttribute("aria-expanded", "false");
+      }
+    });
+  });
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

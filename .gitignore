@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+uploads/
+.pytest_cache/
+
+# Local build artifacts from the React branch. The React source itself lives
+# on the `react-frontend` branch; only node_modules/dist land here.
+frontend/node_modules/
+frontend/dist/

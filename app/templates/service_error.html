@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ heading }} · Exam Partner{% endblock %}
+
+{% block shell %}
+<div class="auth-wrap-solo">
+  <div class="empty" style="max-width:520px">
+    <div class="art" aria-hidden="true">{{ emoji }}</div>
+    <h3>{{ heading }}</h3>
+    <p>{{ detail }}</p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-p" type="button" onclick="location.reload()">Try again</button>
+      <a class="btn btn-g" href="/login">Back to login</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

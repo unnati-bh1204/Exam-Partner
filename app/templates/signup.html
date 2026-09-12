@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Create your account · Exam Partner{% endblock %}
+
+{% block shell %}
+<div class="auth">
+  <section class="auth-l">
+    <span class="blob b1" aria-hidden="true"></span>
+    <span class="blob b2" aria-hidden="true"></span>
+    <span class="blob b3" aria-hidden="true"></span>
+
+    <div class="logo" style="font-size:19px"><span class="m" aria-hidden="true">◆</span> Exam Partner</div>
+
+    <div>
+      <h1>Five subjects.<br>One semester.<br><span class="serif">Zero time to reread it all.</span></h1>
+      <p class="sub">Drop in your material the moment you get it. By finals, your own library is the thing answering your questions.</p>
+      <div class="pills">
+        <span class="pill">📄 PDF</span>
+        <span class="pill">📝 DOCX</span>
+        <span class="pill">📊 PPTX</span>
+        <span class="pill">✍️ Handwritten</span>
+      </div>
+    </div>
+
+    <div class="peek">
+      <p class="q">“Explain the second law of thermodynamics from my notes”</p>
+      <p class="a">Entropy of an isolated system never decreases; it increases until equilibrium is reached…</p>
+      <div class="cites">
+        <span class="cite">Thermo_Ch3.pptx · slide 8</span>
+        <span class="cite">week4_notes.jpg · scanned</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="auth-r">
+    <div class="auth-card">
+      <div class="logo"><span class="m" aria-hidden="true">◆</span> Exam Partner</div>
+      <h2>Create your account</h2>
+      <p class="lede">Free — start uploading in under a minute.</p>
+
+      <form method="post" action="/signup">
+        {% if error %}<p class="alert" role="alert">⚠ {{ error }}</p>{% endif %}
+        <div class="fld">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" autocomplete="email" required autofocus
+                 placeholder="you@college.edu">
+        </div>
+        <div class="fld">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="new-password" required minlength="8"
+                 placeholder="At least 8 characters">
+        </div>
+        <button class="btn btn-p btn-block" type="submit">Create account →</button>
+      </form>
+
+      <p class="auth-alt">Already registered? <a href="/login">Log in</a></p>
+      <p class="trust">✦ <b>Every answer is traceable.</b> You'll always see the file and page an answer came from.</p>
+    </div>
+  </section>
+</div>
+{% endblock %}

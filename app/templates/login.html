@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Log in · Exam Partner{% endblock %}
+
+{% block shell %}
+<div class="auth">
+  <section class="auth-l">
+    <span class="blob b1" aria-hidden="true"></span>
+    <span class="blob b2" aria-hidden="true"></span>
+    <span class="blob b3" aria-hidden="true"></span>
+
+    <div class="logo" style="font-size:19px"><span class="m" aria-hidden="true">◆</span> Exam Partner</div>
+
+    <div>
+      <h1>Ask your notes.<br><span class="serif">Not the internet.</span></h1>
+      <p class="sub">Upload your textbooks, slides and handwritten notes. Get answers with the exact page they came from.</p>
+      <div class="pills">
+        <span class="pill">📄 PDF</span>
+        <span class="pill">📝 DOCX</span>
+        <span class="pill">📊 PPTX</span>
+        <span class="pill">✍️ Handwritten</span>
+      </div>
+    </div>
+
+    <div class="peek">
+      <p class="q">“What's the difference between supervised and unsupervised learning?”</p>
+      <p class="a">Supervised learning trains on labelled data, while unsupervised learning finds structure in unlabelled data…</p>
+      <div class="cites">
+        <span class="cite">ML_Unit_2.pdf · p.14</span>
+        <span class="cite">ML_Notes.pdf · §3.2</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="auth-r">
+    <div class="auth-card">
+      <div class="logo"><span class="m" aria-hidden="true">◆</span> Exam Partner</div>
+      <h2>Welcome back</h2>
+      <p class="lede">Your study library is waiting.</p>
+
+      <form method="post" action="/login">
+        {% if error %}<p class="alert" role="alert">⚠ {{ error }}</p>{% endif %}
+        <div class="fld">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" autocomplete="email" required autofocus
+                 placeholder="you@college.edu">
+        </div>
+        <div class="fld">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required
+                 placeholder="••••••••">
+        </div>
+        <button class="btn btn-p btn-block" type="submit">Log in →</button>
+      </form>
+
+      <p class="auth-alt">New here? <a href="/signup">Create an account</a></p>
+      <p class="trust">🔒 <b>Your material stays yours.</b> Answers come only from what you upload — never from the open internet.</p>
+    </div>
+  </section>
+</div>
+{% endblock %}
