@@ -81,3 +81,68 @@ def test_answer_general_has_no_citations_and_general_mode():
     assert result["citations"] == []
     assert result["found"] is True
     assert "entanglement" in result["answer"]
+
+
+def test_answer_question_retrieves_enough_chunks_for_dense_documents(db):
+    """A single dense document's chunks are all topically similar, so too small
+    a k can miss the one chunk that actually defines the topic. Retrieval must
+    ask for a wide enough window."""
+    from unittest.mock import MagicMock, patch
+
+    fake = MagicMock()
+    fake.content = "An answer."
+
+    with (
+        patch("app.rag_chain.similarity_search", return_value=[]) as mock_search,
+        patch("app.rag_chain.get_llm", return_value=MagicMock(invoke=lambda *a, **k: fake)),
+    ):
+        answer_question(db, "user-1", "subject-1", "what is RAG?")
+
+    requested_k = mock_search.call_args.kwargs["k"]
+    assert requested_k >= 10, f"k={requested_k} is too narrow for a dense single-document subject"
+
+
+def _doc(text, filename, label):
+    from langchain_core.documents import Document
+    return Document(page_content=text, metadata={"filename": filename, "source_label": label})
+
+
+def test_citations_reflect_the_chunks_the_model_actually_used(db):
+    """Citing the highest-similarity chunks is misleading when the answer came
+    from a different one. Cite what the model says it used."""
+    from unittest.mock import MagicMock, patch
+
+    retrieved = [
+        _doc("Unrelated tangent.", "doc.pdf", "page 7"),
+        _doc("Another tangent.", "doc.pdf", "page 4"),
+        _doc("RAG means Retrieval-Augmented Generation.", "doc.pdf", "page 1"),
+    ]
+    fake = MagicMock()
+    fake.content = "RAG means Retrieval-Augmented Generation.\nSOURCES: 3"
+
+    with (
+        patch("app.rag_chain.similarity_search", return_value=retrieved),
+        patch("app.rag_chain.get_llm", return_value=MagicMock(invoke=lambda *a, **k: fake)),
+    ):
+        result = answer_question(db, "u1", "s1", "what is RAG?")
+
+    assert result["citations"] == [{"filename": "doc.pdf", "source_label": "page 1"}]
+    assert "SOURCES:" not in result["answer"]
+
+
+def test_citations_deduplicate_and_survive_a_missing_sources_line(db):
+    from unittest.mock import MagicMock, patch
+
+    retrieved = [_doc("A", "d.pdf", "page 1"), _doc("B", "d.pdf", "page 2")]
+    fake = MagicMock()
+    fake.content = "An answer with no sources line."
+
+    with (
+        patch("app.rag_chain.similarity_search", return_value=retrieved),
+        patch("app.rag_chain.get_llm", return_value=MagicMock(invoke=lambda *a, **k: fake)),
+    ):
+        result = answer_question(db, "u1", "s1", "q")
+
+    # Falls back to the top hits rather than dropping citations entirely.
+    assert len(result["citations"]) >= 1
+    assert result["answer"] == "An answer with no sources line."
